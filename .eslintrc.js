@@ -3,18 +3,23 @@ const resolve = require('path').resolve;
 
 module.exports = {
   root: true,
+
   parserOptions: {
     parser: 'babel-eslint',
   },
+
   env: {
     browser: true,
     node: true,
   },
+
   extends: [
     'plugin:vue/recommended',
     'airbnb-base',
   ],
+
   globals: {},
+
   settings: {
     'import/resolver': {
       webpack: {
@@ -35,6 +40,7 @@ module.exports = {
       },
     },
   },
+
   rules: {
     'no-param-reassign': 'off',
     'import/prefer-default-export': 'off',
@@ -53,4 +59,16 @@ module.exports = {
     'no-debugger': process.env.NODE_ENV === 'production' ? 2 : 0,
     'no-console': process.env.NODE_ENV === 'production' ? 2 : 0,
   },
+
+  overrides: [
+    {
+      files: [
+        '**/__tests__/*.{j,t}s?(x)',
+        '**/tests/unit/**/*.spec.{j,t}s?(x)'
+      ],
+      env: {
+        jest: true
+      }
+    }
+  ]
 };

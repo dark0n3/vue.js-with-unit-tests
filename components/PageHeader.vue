@@ -25,7 +25,7 @@
         <a href="/"><img src="/logo.png" alt="ГдеМатериал.Ру"></a> <!--TODO(iNerV) do dynamically link-->
       </div>
       <div class="main-navigation__burger">
-        <button class="main-navigation__open-menu-btn">
+        <button class="main-navigation__open-menu-btn" @click.prevent="changeMenuVisibility">
           Menu
         </button>
       </div>
@@ -41,62 +41,68 @@
         </li>
       </ul>
     </nav>
-    <ul class="site-navigation">
-      <li class="site-navigation__item">
-        <a class="site-navigation__link" href="/">Category</a>
+
+    <ul v-if="getMenuVisibility" class="site-navigation">
+      <li v-if="getDepth > 1" class="site-navigation__item back">
+        <a class="site-navigation__link" href="/" @click.prevent="prevLevel">
+          <img src="@/assets/img/back-arrow.svg" alt="">
+          Back
+        </a>
       </li>
-      <li class="site-navigation__item">
-        <a class="site-navigation__link" href="/">Category2</a>
-      </li>
-      <li class="site-navigation__item">
-        <a class="site-navigation__link" href="/">Category3</a>
-      </li>
-      <li class="site-navigation__item">
-        <a class="site-navigation__link" href="/">Category4</a>
-      </li>
-      <li class="site-navigation__item">
-        <a class="site-navigation__link" href="/">Category5</a>
-      </li>
-      <li class="site-navigation__item">
-        <a class="site-navigation__link" href="/">Category6</a>
-      </li>
-      <li class="site-navigation__item">
-        <a class="site-navigation__link" href="/">Category7</a>
-      </li>
-      <li class="site-navigation__item">
-        <a class="site-navigation__link" href="/">Category8</a>
-      </li>
-      <li class="site-navigation__item">
-        <a class="site-navigation__link" href="/">Category9</a>
-      </li>
-      <li class="site-navigation__item">
-        <a class="site-navigation__link" href="/">Category10</a>
-      </li>
-      <li class="site-navigation__item">
-        <a class="site-navigation__link" href="/">Category11</a>
-      </li>
-      <li class="site-navigation__item">
-        <a class="site-navigation__link" href="/">Category12</a>
-      </li>
-      <li class="site-navigation__item">
-        <a class="site-navigation__link" href="/">Category13</a>
-      </li>
-      <li class="site-navigation__item">
-        <a class="site-navigation__link" href="/">Category14</a>
-      </li>
-      <li class="site-navigation__item">
-        <a class="site-navigation__link" href="/">Category15</a>
-      </li>
-      <li class="site-navigation__item">
-        <a class="site-navigation__link" href="/">Category16</a>
-      </li>
+      <transition-group name="list">
+        <li v-for="menuItem in getCurrentMenu" :key="'menu-item-' + menuItem.id" class="site-navigation__item">
+          <a class="site-navigation__link" @click.prevent="nextLevel(menuItem)">
+            <img
+              :key="'menu-item-thumb-' + menuItem.id"
+              class="site-navigation__link__thumbnail"
+              :class="{noimage: !menuItem.thumbnail}"
+              :src="menuItem.thumbnail" alt=""
+            >
+            {{ menuItem.name }}
+            <img v-if="menuItem.submenu" class="site-navigation__link__next" src="@/assets/img/next-arrow.svg" alt="">
+          </a>
+        </li>
+      </transition-group>
     </ul>
   </header>
 </template>
 
 <script>
 export default {
+
   name: 'PageHeader',
+  data() {
+    return {
+      displayMenu: false,
+    };
+  },
+  computed: {
+    getCurrentMenu() {
+      return this.$store.getters['the_menu/GET_CURRENT_MENU'];
+    },
+    getDepth() {
+      return this.$store.getters['the_menu/GET_DEPTH'];
+    },
+    getMenuVisibility() {
+      return this.$store.getters['the_menu/GET_MENU_VISIBILITY'];
+    },
+  },
+  methods: {
+    nextLevel(menuItem) {
+      if (menuItem.submenu) {
+        this.$store.commit('the_menu/PUSH_NEXT_LEVEL', menuItem.submenu);
+      } else {
+        window.open(`https://gdematerial.ru/catalog/${menuItem.slug}-${menuItem.id}`, '_self');
+      }
+    },
+    prevLevel() {
+      this.$store.commit('the_menu/PUSH_PREV_LEVEL');
+    },
+    changeMenuVisibility() {
+      this.$store.commit('the_menu/SET_MENU_VISIBILITY', !this.getMenuVisibility);
+    },
+  },
+
 };
 </script>
 
@@ -222,7 +228,13 @@ export default {
   overflow-y: scroll;
   z-index: 1;
   padding-left: 0;
-  display: none;
+
+  @media (min-width: $screen-md) {
+    position: absolute;
+    width: 400px;
+    left: 130px;
+    height: auto;
+  }
 
   &__item {
     display: block;
@@ -231,11 +243,18 @@ export default {
     position: relative;
     color: #333;
     padding: .75rem 1rem;
+    cursor: pointer;
 
     &:hover,
     &:active {
       background-color: rgb(130, 0, 255);
       color: rgb(255, 255, 255);
+    }
+    &.back{
+      border-bottom: 1px solid gray;
+      img{
+        margin-right: 10px;
+      }
     }
   }
 
@@ -260,9 +279,11 @@ export default {
   }
 
   &__link {
-    display: block;
+    display: flex;
+    align-items: center;
     width: 100%;
     color: inherit;
+    // cursor: default;
 
     &:hover,
     &:active {
@@ -282,6 +303,29 @@ export default {
         color: inherit;
       }
     }
+
+    &__thumbnail{
+      height: 25px;
+      width: 25px;
+      margin-right: 10px;
+      &.noimage{
+        opacity: 0;
+      }
+    }
+    &__next{
+      margin-left: auto;
+    }
   }
+}
+
+.list-enter-active, .list-leave-active {
+  transition: all 0.15s;
+}
+.list-enter, .list-leave-to {
+  opacity: 0;
+  transform: translateX(-10px);
+}
+.list-move {
+  transition: transform 1s;
 }
 </style>
